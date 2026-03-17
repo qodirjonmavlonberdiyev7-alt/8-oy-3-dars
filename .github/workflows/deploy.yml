@@ -3,56 +3,52 @@ name: Deploy to VPS
 on:
   push:
     branches:
-    - main
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Setup SSH key
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H "${{ secrets.HOST }}" >> ~/.ssh/known_hosts
-      shell: bash
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+        shell: bash
 
-    - name: Deploy to server
-      env:
-        HOST: ${{ secrets.HOST }}
-        USER: ${{ secrets.USERNAME }}
-        APP_DIR: /ci_cd
-        PORT: ${{ secrets.PORT }}
-      run: ssh $USER@$HOST << 'EOF'
-        set -e
-        
-        if [ ! -d "$APP_DIR" ]; then
-          mkdir -p "$APP_DIR"
-          git clone https://github.com/qodirjonmavlonberdiyev7-alt/8-oy-3-dars.git "$APP_DIR"
-        fi
-        
-        cd "$APP_DIR"
-        
-        if [ ! -d .git ]; then
-          echo "Directory is not a git repository. Abort!"
-          exit 1
-        fi
-        
-        git pull origin main
+      - name: Deploy to server
+        env:
+          HOST: ${{ secrets.HOST }}
+          USER: ${{ secrets.USERNAME }}
+          APP_DIR: /home/ubuntu/ci_cd
+          PORT: ${{ secrets.PORT }}
+        run: |
+          ssh $USER@$HOST << EOF
+            set -e
 
-        echo "PORT=$PORT" > .env
-        npm install
-        npm run build
+            if [ ! -d "$APP_DIR" ]; then
+              mkdir -p "$APP_DIR"
+              git clone https://github.com/behzod-abdullayev/8-oy-2-dars.git "$APP_DIR"
+            fi
 
-        if pm2 list | grep -q "ci_cd_app"; then
-          pm2 restart ci_cd_app
-        else
-          pm2 start dist/main.js --name ci_cd_app
-        fi
+            cd "$APP_DIR"
+            git reset --hard origin/main
+            git pull origin main
 
-        pm2 save
-        EOF
+            echo "PORT=$PORT" > .env
+            npm install
+            npm run build
+
+            if pm2 list | grep -q "ci_cd_app"; then
+              pm2 restart ci_cd_app
+            else
+              pm2 start dist/main.js --name ci_cd_app
+            fi
+
+            pm2 save
+          EOF
