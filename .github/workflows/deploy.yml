@@ -25,7 +25,7 @@ jobs:
         env:
           HOST: ${{ secrets.HOST }}
           USER: ${{ secrets.USERNAME }}
-          APP_DIR: /home/ubuntu/ci_cd
+          APP_DIR: /ci_cd
           PORT: ${{ secrets.PORT }}
         run: |
           ssh $USER@$HOST << EOF
@@ -33,11 +33,16 @@ jobs:
 
             if [ ! -d "$APP_DIR" ]; then
               mkdir -p "$APP_DIR"
-              git clone https://github.com/behzod-abdullayev/8-oy-2-dars.git "$APP_DIR"
+              git clone https://github.com/qodirjonmavlonberdiyev7-alt/8-oy-3-dars.git "$APP_DIR"
             fi
 
             cd "$APP_DIR"
-            git reset --hard origin/main
+
+            if [ ! -d .git ]; then
+              echo "❌ Repo not cloned properly. Aborting."
+              exit 1
+            fi
+
             git pull origin main
 
             echo "PORT=$PORT" > .env
